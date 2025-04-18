@@ -23,7 +23,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 {post.title}
               </h3>
             </Link>
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2 break-all">
               {post.content}
             </p>
             <div className="flex flex-wrap gap-2 mt-2">
