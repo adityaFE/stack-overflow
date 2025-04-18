@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'https://localhost:8080', 'http://localhost:5173'], // Add Vite's default port
+  origin: ['http://localhost:8080', 'https://localhost:8080', 'http://localhost:5173','https://stack-lite.netlify.app/'], // Add Vite's default port
   credentials: true
 }));
 app.use(express.json());
