@@ -1,7 +1,7 @@
 
 import { Tag as TagType } from '@/types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config'
 
 // Get all tags
 export async function getAllTags(): Promise<TagType[]> {

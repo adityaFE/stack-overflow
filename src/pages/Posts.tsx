@@ -1,9 +1,8 @@
 
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import {  useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import PostsList from "@/components/post/PostsList";
-import { useAuth } from "@/context/AuthContext";
 import {  LoaderCircle } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
@@ -22,8 +21,6 @@ const container = {
 };
 
 const Posts = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
@@ -68,10 +65,6 @@ const Posts = () => {
       console.log(`Filtering by tag: ${tagFilter}`);
     }
   }, [tagFilter]);
-
-  const handleAskQuestion = () => {
-    navigate("/posts/ask");
-  };
 
   return (
     <motion.div

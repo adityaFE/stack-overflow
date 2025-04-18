@@ -1,7 +1,6 @@
 
 import { Post as PostType, Answer as AnswerType } from '@/types';
-
-const API_BASE_URL = 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config'; // Adjust the path as necessary
 
 // Get all posts
 export async function getAllPosts(): Promise<PostType[]> {
