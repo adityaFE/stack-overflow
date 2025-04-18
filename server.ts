@@ -16,7 +16,7 @@ const allowedOrigins = [
   'http://localhost:8082',
   'http://localhost:8080',
   'http://localhost:3000',
-  'https://stack-lite.netlify.app/',  // Production Netlify frontend
+  'https://stack-lite.netlify.app',  // Production Netlify frontend
   'https://stack-overflowr.onrender.com'
 ].filter(Boolean);
 
