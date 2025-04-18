@@ -36,6 +36,7 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(express.json()); // Add this line to parse JSON request bodies
 
 // Connect to database
 async function initializeDatabase() {
