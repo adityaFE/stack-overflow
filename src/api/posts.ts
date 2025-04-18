@@ -10,7 +10,7 @@ export async function getAllPosts(): Promise<PostType[]> {
       throw new Error(`HTTP error ${response.status}`);
     }
     const data = await response.json();
-    return data.map((post: any) => ({
+    return data.map((post: PostType & { _id?: string }) => ({
       id: post._id || post.id,
       title: post.title,
       content: post.content,
@@ -20,8 +20,8 @@ export async function getAllPosts(): Promise<PostType[]> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: (post.answers || []).map((ans: any) => ({
-        id: ans._id || ans.id,
+      answers: (post.answers || []).map((ans: AnswerType) => ({
+        id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
@@ -54,8 +54,8 @@ export async function getPostById(id: string): Promise<PostType | null> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: (post.answers || []).map((ans: any) => ({
-        id: ans._id || ans.id,
+      answers: (post.answers || []).map((ans: AnswerType) => ({
+        id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
@@ -130,8 +130,8 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: (post.answers || []).map((ans: any) => ({
-        id: ans._id || ans.id,
+      answers: (post.answers || []).map((ans: AnswerType) => ({
+        id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
