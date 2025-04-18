@@ -11,11 +11,31 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:8080', 'https://localhost:8080', 'http://localhost:5173','https://stack-lite.netlify.app/'], // Add Vite's default port
-  credentials: true
-}));
-app.use(express.json());
+const allowedOrigins = [
+  'http://localhost:5173',  // Vite default port
+  'http://localhost:8082',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'https://stack-lite.netlify.app/',  // Production Netlify frontend
+  'https://stack-overflowr.onrender.com'
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('Origin not allowed by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Middleware
+app.use(cors(corsOptions));
 
 // Connect to database
 async function initializeDatabase() {
