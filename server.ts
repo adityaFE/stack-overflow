@@ -6,6 +6,7 @@ import { connectToDatabase } from './src/lib/mongodb.js';
 import PostModel from './src/models/Post.js';
 import TagModel from './src/models/Tag.js';
 import UserModel from './src/models/User.js';
+import multer from 'multer';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,9 +35,26 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Configure multer for temporary file upload
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      cb(new Error('Invalid file type'));
+      return;
+    }
+    cb(null, true);
+  }
+});
+
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json()); // Add this line to parse JSON request bodies
+app.use(express.json({ limit: '10mb' })); // Increased limit for base64 images
 
 // Connect to database
 async function initializeDatabase() {
@@ -169,7 +187,91 @@ app.delete('/api/posts/:id', async (req, res): Promise<any> => {
   }
 });
 
-// Tags routes
+// Add a new route to handle post upvotes
+app.post('/api/posts/:id/upvote', async (req, res): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const post = await PostModel.findById(req.params.id).exec();
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    // Check if user has already upvoted
+    const userIndex = post.upvotedBy.indexOf(userId);
+    
+    if (userIndex === -1) {
+      // User hasn't upvoted yet, add upvote
+      post.upvotedBy.push(userId);
+      post.upvotes += 1;
+    } else {
+      // User already upvoted, remove upvote
+      post.upvotedBy.splice(userIndex, 1);
+      post.upvotes = Math.max(0, post.upvotes - 1); // Ensure upvotes doesn't go below 0
+    }
+    
+    await post.save();
+    
+    res.json({ upvotes: post.upvotes, upvotedBy: post.upvotedBy });
+  } catch (error) {
+    console.error(`Error toggling upvote for post ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to toggle upvote' });
+  }
+});
+
+// Add a similar route for answer upvotes
+app.post('/api/posts/:postId/answers/:answerId/upvote', async (req, res): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const post = await PostModel.findById(req.params.postId).exec();
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    const answer = post.answers.id(req.params.answerId);
+    
+    if (!answer) {
+      return res.status(404).json({ error: 'Answer not found' });
+    }
+    
+    // Initialize upvotedBy array if it doesn't exist
+    if (!answer.upvotedBy) {
+      answer.upvotedBy = [];
+    }
+    
+    // Check if user has already upvoted
+    const userIndex = answer.upvotedBy.indexOf(userId);
+    
+    if (userIndex === -1) {
+      // User hasn't upvoted yet, add upvote
+      answer.upvotedBy.push(userId);
+      answer.upvotes += 1;
+    } else {
+      // User already upvoted, remove upvote
+      answer.upvotedBy.splice(userIndex, 1);
+      answer.upvotes = Math.max(0, answer.upvotes - 1); // Ensure upvotes doesn't go below 0
+    }
+    
+    await post.save();
+    
+    res.json({ upvotes: answer.upvotes, upvotedBy: answer.upvotedBy });
+  } catch (error) {
+    console.error(`Error toggling upvote for answer ${req.params.answerId}:`, error);
+    res.status(500).json({ error: 'Failed to toggle upvote' });
+  }
+});
+
 app.get('/api/tags', async (req, res) => {
   try {
     const tags = await TagModel.find({}).sort({ count: -1 }).exec();
@@ -357,6 +459,57 @@ app.patch('/api/users/:uid/appearance', async (req, res): Promise<any> => {
   } catch (error) {
     console.error(`Error updating appearance settings for user ${req.params.uid}:`, error);
     res.status(500).json({ error: 'Failed to update appearance settings' });
+  }
+});
+
+// Add image upload route for base64
+app.post('/api/users/:uid/profile/image', upload.single('image'), async (req, res): Promise<any> => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Convert file buffer to base64
+    const fileBuffer = req.file.buffer;
+    const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+    
+    const user = await UserModel.findOneAndUpdate(
+      { uid: req.params.uid },
+      { 
+        photoURL: base64Image,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error uploading profile image for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to upload profile image' });
+  }
+});
+
+// Add image delete route
+app.delete('/api/users/:uid/profile/image', async (req, res): Promise<any> => {
+  try {
+    const user = await UserModel.findOne({ uid: req.params.uid }).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    user.photoURL = '';
+    user.updatedAt = new Date();
+    await user.save();
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error deleting profile image for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to delete profile image' });
   }
 });
 

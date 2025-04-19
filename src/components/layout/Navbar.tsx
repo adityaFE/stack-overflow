@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,60 +33,22 @@ import {
   Plus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth, signOut } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
-import {  useMutation } from "@tanstack/react-query";
-import { updateAppearanceSettings} from "@/api/users";
 
 const Navbar: React.FC = () => {
   const { currentUser } = useAuth();
+  const { theme, toggleTheme, loading: themeLoading } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-
-  const appearanceMutation = useMutation({
-    mutationFn: (settings: Partial<{ darkMode: boolean; compactView: boolean; codeSyntaxHighlighting: boolean }>) => 
-      updateAppearanceSettings(currentUser?.uid || '', settings),
-    onSuccess: () => {
-      toast({
-        title: "Appearance settings saved",
-        description: "Your appearance preferences have been updated."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update appearance settings.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const toggleTheme = () => {
-      const newValue = !darkMode;
-      setDarkMode(newValue);
-      
-      // Update document class
-      if (newValue) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      
-      appearanceMutation.mutate({ darkMode: newValue });
-      
-      toast({
-        title: `${newValue ? "Dark" : "Light"} mode activated`,
-        description: `Theme has been switched to ${newValue ? "dark" : "light"} mode.`
-      });
-    };
 
   const handleLogout = async () => {
     try {
@@ -153,9 +114,17 @@ const Navbar: React.FC = () => {
             variant="outline" 
             size="icon"
             onClick={toggleTheme}
+            disabled={themeLoading}
             className="rounded-full"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {themeLoading ? (
+              <span className="animate-pulse">...</span>
+            ) : theme === 'dark' ? (
+              <Sun size={18} />
+            ) : (
+              <Moon size={18} />
+            )}
           </Button>
           
           <Button 
