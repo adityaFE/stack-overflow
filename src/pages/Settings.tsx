@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth, updateProfile } from "@/lib/firebase";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
@@ -24,14 +25,16 @@ import {
   updateUserProfile, 
   updateNotificationSettings, 
   updateAppearanceSettings, 
-  createOrUpdateUser 
+  createOrUpdateUser, 
+  updateUserProfileWithImage,
+  deleteUserProfileImage
 } from "@/api/users";
 import { LoaderCircle } from "lucide-react";
+import ImageUpload from "@/components/profile/ImageUpload";
 
 const Settings = () => {
   const { currentUser, loading } = useAuth();
   
-  // If still loading auth state, show loading
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4">
@@ -43,7 +46,6 @@ const Settings = () => {
     );
   }
 
-  // If not logged in, redirect to home
   if (!currentUser) {
     toast({
       title: "Authentication required",
@@ -58,92 +60,37 @@ const Settings = () => {
 
 const SettingsContent = () => {
   const { currentUser } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [upvoteNotifications, setUpvoteNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [compactView, setCompactView] = useState(false);
   const [codeSyntaxHighlighting, setCodeSyntaxHighlighting] = useState(true);
 
-  // Fetch user data from API
   const { data: userData, isLoading: isLoadingUser, isError } = useQuery({
     queryKey: ['user', currentUser?.uid],
     queryFn: () => getUserByUid(currentUser?.uid || ''),
     enabled: !!currentUser?.uid,
-    meta: {
-      onSuccess: (data) => {
-        if (!data) {
-          // Create user if not exists
-          if (currentUser) {
-            createUserMutation.mutate({
-              uid: currentUser.uid,
-              email: currentUser.email || '',
-              displayName: currentUser.displayName || '',
-              photoURL: currentUser.photoURL || ''
-            });
-          }
-          return;
-        }
-        
-        // Set form values from fetched user data
-        setDisplayName(data.displayName || '');
-        setAvatarUrl(data.photoURL || '');
-        
-        // Set notification settings
-        if (data.notificationSettings) {
-          setEmailNotifications(data.notificationSettings.emailNotifications);
-          setWeeklyDigest(data.notificationSettings.weeklyDigest);
-          setUpvoteNotifications(data.notificationSettings.upvoteNotifications);
-        }
-        
-        // Set appearance settings
-        if (data.appearance) {
-          setDarkMode(data.appearance.darkMode);
-          setCompactView(data.appearance.compactView);
-          setCodeSyntaxHighlighting(data.appearance.codeSyntaxHighlighting);
-          
-          // Apply dark mode if set
-          if (data.appearance.darkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        }
-      }
-    }
   });
 
-  // Use useEffect to handle the success case since we can't use onSuccess directly
   useEffect(() => {
     if (userData) {
-      // Set form values from fetched user data
       setDisplayName(userData.displayName || '');
       setAvatarUrl(userData.photoURL || '');
       
-      // Set notification settings
       if (userData.notificationSettings) {
         setEmailNotifications(userData.notificationSettings.emailNotifications);
         setWeeklyDigest(userData.notificationSettings.weeklyDigest);
         setUpvoteNotifications(userData.notificationSettings.upvoteNotifications);
       }
       
-      // Set appearance settings
       if (userData.appearance) {
-        setDarkMode(userData.appearance.darkMode);
         setCompactView(userData.appearance.compactView);
         setCodeSyntaxHighlighting(userData.appearance.codeSyntaxHighlighting);
-        
-        // Apply dark mode if set
-        if (userData.appearance.darkMode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
       }
     } else if (currentUser && !isLoadingUser) {
-      // Create user if not exists and query has completed but no data returned
       createUserMutation.mutate({
         uid: currentUser.uid,
         email: currentUser.email || '',
@@ -153,7 +100,6 @@ const SettingsContent = () => {
     }
   }, [userData, currentUser, isLoadingUser]);
 
-  // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: createOrUpdateUser,
     onSuccess: () => {
@@ -171,12 +117,10 @@ const SettingsContent = () => {
     }
   });
 
-  // Profile update mutation
   const profileMutation = useMutation({
     mutationFn: (data: { displayName: string; photoURL: string }) => 
       updateUserProfile(currentUser?.uid || '', data),
     onSuccess: () => {
-      // Also update Firebase profile
       if (auth.currentUser) {
         updateProfile(auth.currentUser, {
           displayName,
@@ -198,7 +142,6 @@ const SettingsContent = () => {
     }
   });
 
-  // Notification settings mutation
   const notificationMutation = useMutation({
     mutationFn: (settings: Partial<{ emailNotifications: boolean; weeklyDigest: boolean; upvoteNotifications: boolean }>) => 
       updateNotificationSettings(currentUser?.uid || '', settings),
@@ -217,7 +160,6 @@ const SettingsContent = () => {
     }
   });
 
-  // Appearance settings mutation
   const appearanceMutation = useMutation({
     mutationFn: (settings: Partial<{ darkMode: boolean; compactView: boolean; codeSyntaxHighlighting: boolean }>) => 
       updateAppearanceSettings(currentUser?.uid || '', settings),
@@ -235,6 +177,35 @@ const SettingsContent = () => {
       });
     }
   });
+
+  const handleImageUpload = async (file: File) => {
+    if (!currentUser?.uid) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const updatedUser = await updateUserProfileWithImage(currentUser.uid, formData);
+    if (updatedUser) {
+      if (auth.currentUser) {
+        updateProfile(auth.currentUser, {
+          photoURL: updatedUser.photoURL
+        });
+      }
+    }
+  };
+
+  const handleImageDelete = async () => {
+    if (!currentUser?.uid) return;
+    
+    const updatedUser = await deleteUserProfileImage(currentUser.uid);
+    if (updatedUser) {
+      if (auth.currentUser) {
+        updateProfile(auth.currentUser, {
+          photoURL: null
+        });
+      }
+    }
+  };
 
   const handleUpdateProfile = () => {
     profileMutation.mutate({ 
@@ -262,21 +233,12 @@ const SettingsContent = () => {
   };
 
   const handleToggleDarkMode = () => {
-    const newValue = !darkMode;
-    setDarkMode(newValue);
-    
-    // Update document class
-    if (newValue) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    appearanceMutation.mutate({ darkMode: newValue });
+    const newValue = theme === "dark" ? "light" : "dark";
+    setTheme(newValue);
     
     toast({
-      title: `${newValue ? "Dark" : "Light"} mode activated`,
-      description: `Theme has been switched to ${newValue ? "dark" : "light"} mode.`
+      title: `${newValue === "dark" ? "Dark" : "Light"} mode activated`,
+      description: `Theme has been switched to ${newValue === "dark" ? "dark" : "light"} mode.`
     });
   };
 
@@ -347,26 +309,12 @@ const SettingsContent = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <Avatar className="w-20 h-20">
-                    <AvatarImage src={avatarUrl || undefined} />
-                    <AvatarFallback>
-                      {currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <Label htmlFor="avatar-url">Avatar URL</Label>
-                    <Input
-                      id="avatar-url"
-                      value={avatarUrl || ""}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      placeholder="https://example.com/avatar.jpg"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter a URL for your profile picture
-                    </p>
-                  </div>
-                </div>
+                <ImageUpload
+                  currentImage={avatarUrl}
+                  displayName={displayName}
+                  onImageUpload={handleImageUpload}
+                  onImageDelete={handleImageDelete}
+                />
                 
                 <div className="space-y-2">
                   <Label htmlFor="display-name">Display Name</Label>
@@ -473,9 +421,8 @@ const SettingsContent = () => {
                     </p>
                   </div>
                   <Switch 
-                    checked={darkMode}
+                    checked={theme === "dark"}
                     onCheckedChange={handleToggleDarkMode}
-                    disabled={appearanceMutation.isPending}
                   />
                 </div>
                 
