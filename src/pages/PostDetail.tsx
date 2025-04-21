@@ -277,7 +277,7 @@ const PostDetail = () => {
 
   
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-6 px-4 overflow-hidden">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link 
@@ -288,46 +288,46 @@ const PostDetail = () => {
             Back to Posts
           </Link>
           
-          <h1 className="text-2xl md:text-3xl font-bold mb-4">{post.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-4 break-words">{post.title}</h1>
           
           <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Calendar size={16} />
-              <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+              <Calendar size={16} className="flex-shrink-0" />
+              <span className="truncate">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
             </div>
             <div className="flex items-center gap-1">
-              <ThumbsUp size={16} />
+              <ThumbsUp size={16} className="flex-shrink-0" />
               <span>{post.upvotes} upvotes</span>
             </div>
             <div className="flex items-center gap-1">
-              <Eye size={16} />
+              <Eye size={16} className="flex-shrink-0" />
               <span>{post.views} views</span>
             </div>
             <div className="flex items-center gap-1">
-              <MessageSquare size={16} />
+              <MessageSquare size={16} className="flex-shrink-0" />
               <span>{post.answers.length} answers</span>
             </div>
-            <div>by {post.authorName}</div>
+            <div className="truncate max-w-full">by {post.authorName}</div>
           </div>
           
-          <Card>
+          <Card className="overflow-hidden">
             <CardContent className="p-6">
-              <div className="prose dark:prose-invert max-w-none">
+              <div className="prose dark:prose-invert max-w-none break-words overflow-hidden">
                 {renderMarkdown(post.content)}
               </div>
             </CardContent>
             <CardFooter className="px-6 py-4 bg-secondary/30 border-t flex flex-wrap gap-4 justify-between">
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
-                  <Link key={tag} to={`/posts?tag=${tag}`}>
-                    <TagBadge key={tag} name={tag} />
+                  <Link key={tag} to={`/posts?tag=${tag}`} className="max-w-full">
+                    <TagBadge key={tag} name={tag} className="max-w-full break-all" />
                   </Link>
                 ))}
               </div>
               <Button 
                 variant={hasUserUpvotedPost ? "default" : "outline"} 
                 size="sm"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 flex-shrink-0"
                 onClick={handleUpvote}
                 disabled={upvoting}
               >
@@ -346,10 +346,10 @@ const PostDetail = () => {
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="answers">
+              <TabsTrigger value="answers" className="truncate">
                 Answers ({post.answers.length})
               </TabsTrigger>
-              <TabsTrigger value="write-answer">
+              <TabsTrigger value="write-answer" className="truncate">
                 Write Answer
               </TabsTrigger>
             </TabsList>
@@ -357,20 +357,20 @@ const PostDetail = () => {
               {post.answers.length > 0 ? (
                 <div className="space-y-6">
                   {post.answers.map((answer) => (
-                    <Card key={answer.id}>
+                    <Card key={answer.id} className="overflow-hidden">
                       <CardContent className="p-6">
-                        <div className="prose dark:prose-invert max-w-none">
+                        <div className="prose dark:prose-invert max-w-none break-words overflow-hidden">
                           {renderMarkdown(answer.content)}
                         </div>
                       </CardContent>
-                      <CardFooter className="px-6 py-4 bg-secondary/30 border-t flex justify-between">
-                        <div className="text-sm text-muted-foreground">
+                      <CardFooter className="px-6 py-4 bg-secondary/30 border-t flex flex-wrap justify-between gap-2">
+                        <div className="text-sm text-muted-foreground truncate max-w-[70%]">
                           Answered by {answer.authorName}, {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
                         </div>
                         <Button 
                           variant={hasUserUpvotedAnswer(answer) ? "default" : "outline"} 
                           size="sm"
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1 flex-shrink-0"
                           onClick={() => handleAnswerUpvote(answer.id)}
                         >
                           <ThumbsUp size={16} />
