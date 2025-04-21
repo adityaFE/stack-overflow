@@ -11,7 +11,6 @@ import {
   PaintBucket, 
   Lightbulb, 
   Package, 
-  LucideIcon,
   Puzzle,
   Atom
 } from "lucide-react";
@@ -26,38 +25,39 @@ const TagIcon: React.FC<TagIconProps> = ({ tagName, className }) => {
   // Map tag names to appropriate icons
   const getIconForTag = (tag: string): React.ReactNode => {
     const tagLower = tag.toLowerCase();
+    const iconSize = 14; // Decreased from default size
     
     if (tagLower.includes("javascript") || tagLower.includes("js")) {
-      return <Code className="text-yellow-500" />;
+      return <Code className="text-yellow-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("react") || tagLower.includes("hooks")) {
-      return <Atom className="text-blue-400" />;
+      return <Atom className="text-blue-400 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("typescript") || tagLower.includes("ts")) {
-      return <FileType className="text-blue-600" />;
+      return <FileType className="text-blue-600 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("mongo") || tagLower.includes("database")) {
-      return <Database className="text-green-600" />;
+      return <Database className="text-green-600 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("node") || tagLower.includes("express")) {
-      return <Server className="text-green-500" />;
+      return <Server className="text-green-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("html")) {
-      return <Code className="text-orange-500" />;
+      return <Code className="text-orange-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("css")) {
-      return <PaintBucket className="text-blue-500" />;
+      return <PaintBucket className="text-blue-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("redux")) {
-      return <Puzzle className="text-purple-500" />;
+      return <Puzzle className="text-purple-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("schema") || tagLower.includes("design")) {
-      return <Boxes className="text-amber-500" />;
+      return <Boxes className="text-amber-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("api") || tagLower.includes("rest")) {
-      return <Webhook className="text-red-500" />;
+      return <Webhook className="text-red-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("web") || tagLower.includes("browser")) {
-      return <Globe className="text-blue-500" />;
+      return <Globe className="text-blue-500 pt-0.5" size={iconSize} />;
     } else if (tagLower.includes("vue") || tagLower.includes("angular")) {
-      return <Package className="text-green-500" />;
+      return <Package className="text-green-500 pt-0.5" size={iconSize} />;
     } else {
-      return <Lightbulb className="text-amber-400" />;
+      return <Lightbulb className="text-amber-400 pt-0.5" size={iconSize} />;
     }
   };
 
   return (
-    <div className={cn("h-5 w-5", className)}>
+    <div className={cn("h-4 w-4 flex items-center justify-center", className)}>
       {getIconForTag(tagName)}
     </div>
   );

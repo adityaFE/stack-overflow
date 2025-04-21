@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import TagBadge from "@/components/tag/TagBadge";
 import PostCard from "@/components/post/PostCard";
 import { Post, Tag } from "@/types";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface PostsListProps {
   posts: Post[];
@@ -21,6 +22,8 @@ const item = {
 const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 7;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,6 +36,11 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
     }
   }, [location.search]);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   const filteredPosts = posts.filter((post) => {
     // Filter by search query
     const matchesQuery = post.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -43,6 +51,17 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
     
     return matchesQuery && matchesTags;
   });
+
+  // Calculate pagination
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedTags]);
 
   const handleTagClick = (tagName: string) => {
     if (selectedTags.includes(tagName)) {
@@ -65,6 +84,11 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
   const clearAllTags = () => {
     setSelectedTags([]);
     navigate("/posts");
+  };
+
+  // Modify the pagination button handlers to include the scroll behavior
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -160,8 +184,8 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
         variants={item}
         className="space-y-4"
       >
-        {filteredPosts.length > 0 ? (
-          filteredPosts.map((post, index) => (
+        {currentPosts.length > 0 ? (
+          currentPosts.map((post, index) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
@@ -183,6 +207,54 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
               Try adjusting your search or filter to find what you're looking for.
             </p>
           </motion.div>
+        )}
+        
+        {/* Pagination controls */}
+        {filteredPosts.length > postsPerPage && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first page, last page, current page, and pages around current page
+                  return page === 1 || 
+                         page === totalPages || 
+                         (page >= currentPage - 1 && page <= currentPage + 1);
+                })
+                .map((page, index, array) => (
+                  <React.Fragment key={page}>
+                    {index > 0 && array[index - 1] !== page - 1 && (
+                      <span className="text-muted-foreground px-1">...</span>
+                    )}
+                    <Button
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  </React.Fragment>
+                ))}
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </motion.div>
     </div>
