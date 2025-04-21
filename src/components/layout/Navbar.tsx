@@ -259,9 +259,10 @@ const Navbar: React.FC = () => {
               <Button 
                 variant="ghost"
                 className="w-full flex items-center justify-center gap-2"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   setLogoutDialogOpen(true);
-                  setMobileMenuOpen(false);
+                  // Don't close the mobile menu yet
                 }}
               >
                 <LogOut size={18} />
@@ -269,7 +270,7 @@ const Navbar: React.FC = () => {
               </Button>
 
               <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="z-[100]">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -278,7 +279,13 @@ const Navbar: React.FC = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    <AlertDialogAction 
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }} 
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
                       Logout
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -291,12 +298,16 @@ const Navbar: React.FC = () => {
                 <Button 
                   variant="outline"
                   className="w-full"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setAuthOpen(true);
+                    // Don't close the mobile menu yet
+                  }}
                 >
                   Login / Register
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-md z-[100]">
                 <AuthModal onSuccess={() => {
                   setAuthOpen(false);
                   setMobileMenuOpen(false);
