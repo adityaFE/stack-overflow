@@ -19,7 +19,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <div className="flex justify-between gap-4">
           <div className="flex-1">
             <Link to={`/posts/${post.id}`} className="group">
-              <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">
+              <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2 break-all">
                 {post.title}
               </h3>
             </Link>
