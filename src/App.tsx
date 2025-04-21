@@ -7,7 +7,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import ParticlesBackground from "../src/components/ui/ParticleBackground";
 import Index from "./pages/Index";
 import Posts from "./pages/Posts";
@@ -45,7 +44,6 @@ const App = () => (
                   </Routes>
                 </AnimatePresence>
               </main>
-              <Footer />
             </div>
           </BrowserRouter>
         </TooltipProvider>
